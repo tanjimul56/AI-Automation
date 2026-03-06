@@ -1,0 +1,218 @@
+{
+  "name": "Basic email Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "94b0e2a4-495a-4293-b4ac-a545c4292733",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DB3t6QiGdUk7mweE",
+          "name": "do_huun_suk"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  // Get data from the 'Edit Fields' node\n  const input = item.json;\n\n  let name = \"\";\n  let email = \"\";\n\n  // 1. Parse the 'From' field to separate Name and Email\n  // Input: \"Md tanjimul Islam <islammdtanjimul95@gmail.com>\"\n  if (input.From) {\n    const match = input.From.match(/(.*)<(.+)>/);\n    if (match) {\n      name = match[1].trim().replace(/(^\"|\"$)/g, \"\");\n      email = match[2].trim();\n    } else {\n      // Fallback if there's no bracketed email\n      email = input.From.trim();\n      name = input.From.trim();\n    }\n  }\n\n  // 2. Return with the exact keys you requested\n  return {\n    json: {\n      \"From\": name,\n      \"email\": email,\n      \"Subject\": input.Subject || \"\",\n      \"Body\": input.body || \"\"\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "2238ad2f-e073-4615-97f8-c65b36895a0a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e89e3475-5c65-42b2-8385-b6aceeba1cd6",
+              "name": "From",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "cc2dc819-69e1-4120-81b5-275d4aac735f",
+              "name": "Subject",
+              "value": "={{ $json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "a7fa2578-4255-4599-9667-4bd256003b21",
+              "name": "body",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6328c618-cdd4-4eca-82f0-210e4f244db9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=subject:  {{ $json.Subject }}\nBody: {{ $json.Body }}",
+        "options": {
+          "systemMessage": "=Character: You are a highly skilled customer support representative for a reputable company, experienced in managing various customer inquiries, de-escalating issues, and fostering positive customer relationships through professional and empathetic communication.\n\nRequest: Craft a polite, professional, and helpful response to the customer email. Address their concerns appropriately while ensuring a positive tone and reflecting the company's commitment to excellent customer service.\n\nExamples:\n- For a billing inquiry: \"Thank you for reaching out about your recent billing statement. I understand your concern and I'm here to help clarify the charges. Let me review your account and provide you with a detailed explanation...\"\n- For a technical issue: \"I appreciate you taking the time to report this technical issue. I understand how frustrating this must be, and I want to help resolve this as quickly as possible. Based on your description...\"\n- For a general inquiry: \"Thank you for your email. I'd be happy to help you with your question about our services. Let me provide you with the information you're looking for...\"\n\nAdditions/Adjustments:\n- Assume the role of a professional, empathetic customer support agent.\n- Be prepared to address various types of customer concerns with appropriate responses.\n- Do not make assumptions about the customer's gender, age, or technical expertise.\n- Avoid making promises you can't keep or speaking for other departments.\n- Maintain the company's professional image at all times.\n- Show empathy and understanding for the customer's situation.\n\nType of output: Provide a polite and informative email reply that does not include a subject line or signature. Start with a greeting, keep the body brief (3-5 sentences), and end with a polite closing. Use a positive tone, show empathy, provide clear information, and offer solutions or next steps.\n\nExtras: This response should embody your company's values and commitment to customer satisfaction. Ensure that the customer feels heard, valued, and confident that their issue will be resolved. Focus on being helpful while managing expectations appropriately.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        592,
+        0
+      ],
+      "id": "5001fe5b-05ff-491a-8fc6-7a9af08d238c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        208
+      ],
+      "id": "8105f8a4-0817-4958-9783-d7a1e9e55fe4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0nkdwj2eaJoSy2jJ",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Code in JavaScript').item.json.email }}",
+        "subject": "={{ $('Code in JavaScript').item.json.Subject }}",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        0
+      ],
+      "id": "eca98a6c-d492-489b-a68a-3708d7f2b4af",
+      "name": "Send a message",
+      "webhookId": "7759a044-6de5-40f3-84ec-ee2b161a1d51",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DB3t6QiGdUk7mweE",
+          "name": "do_huun_suk"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9594ca86-bad6-49eb-af0d-cc3170f05e54",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c6526fe47ada7dfeadc8516ef56787dff3463d148df36bba9462b224e0a6869"
+  },
+  "id": "NIsRMzG5rI0nvFkH",
+  "tags": []
+}
