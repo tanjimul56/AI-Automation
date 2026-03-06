@@ -1,0 +1,327 @@
+{
+  "name": "Email Auto Draft",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -112
+      ],
+      "id": "880aafc0-b0e4-4db7-a638-15dab50e81a9",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bzi1s5DnYTEPaPmA",
+          "name": "DoHuunSuk"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Social Media",
+              "description": "=Emails related to social networking platforms, content engagement, community interactions, or platform notifications. This includes notifications about likes, comments, mentions, follows, direct messages, connection requests, account updates, verification alerts, and marketing campaigns from social media platforms.\n\nExamples include:\n\n- LinkedIn connection requests.\n- Facebook notifications\n- Instagram mentions or DMs\n- X (Twitter) alerts\n- YouTube comments\n- TikTok updates\n\nDo NOT include:\n\n- Customer complaints from users (those go to Customer Support)\n- Paid advertising invoices (those go to Finance)"
+            },
+            {
+              "category": "Promotion",
+              "description": "=Emails from customers, users, or clients requesting help, reporting issues, asking product questions, submitting complaints, requesting refunds, or seeking technical assistance.\n\nExamples include:\n\n-“I can't log into my account”\n-“Your product isn’t working”\n-“Can you explain your pricing?”\n-“I need help with my order”\n-“Please cancel my subscription”\n\nDo NOT include:\n-Automated support ticket confirmations (unless manual response is required)\n-Internal team discussions"
+            },
+            {
+              "category": "Finance Label",
+              "description": "=Emails related to financial transactions, billing, invoices, payments, receipts, bank notifications, payroll, tax documents, subscriptions, or expense reports.\n\nExamples include:\n-Invoice from vendors\n-Stripe / PayPal payment confirmation\n-Bank transaction alerts\n-Credit card statements\n-Subscription billing notifications\n-Tax forms\n-Refund confirmations\n\nDo NOT include:\n-Customer refund requests (those go to Customer Support)\n-Marketing newsletters from financial companies (those can be filtered)"
+            },
+            {
+              "category": "High Priority",
+              "description": "=Emails that require urgent attention, immediate response, or time-sensitive action. These emails typically involve deadlines, critical issues, important clients, revenue impact, system failures, legal matters, executive communication, or urgent customer escalations.\n\n\nClassify an email as high_priority = true if it includes:\n-Urgent language (e.g., “ASAP”, “urgent”, “immediately”, “today”, “critical”)\n-Service outages or technical failures\n-Payment failures affecting revenue\n-Executive or VIP communication\n-Legal or compliance issues\n-Escalated customer complaints\n-Deadline-driven requests\n-Security alerts or account breaches\n\n\nDo NOT mark as high priority:\n-General newsletters\n-Marketing emails\n-Social media notifications\n-Routine invoices without urgency\n-Standard updates with no deadline"
+            }
+          ]
+        },
+        "options": {
+          "enableAutoFixing": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "05dece37-3526-4b2a-a722-9536ea0360b1",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        176
+      ],
+      "id": "07e974ca-8a02-472e-ac38-20c2d2062c38",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nBHqd6MIcQcM0LRu",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_4827681878447662629"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        -464
+      ],
+      "id": "bb941551-5b4e-43d9-9f5c-fc41ccaffe21",
+      "name": "Add label to message",
+      "webhookId": "8cc4cdd2-cd12-44a4-9e79-9321a67771bf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bzi1s5DnYTEPaPmA",
+          "name": "DoHuunSuk"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Gmail Trigger').item.json.snippet }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an advanced Email Classification Agent.\n\nYour task is to analyze social media labeled messages. According to the message topic, you need to draft an email.\n\n-make a gist of the following message\n- according to the gist, draft the message clearly, properly.\n\nUse proper paragraph formatting.\nInsert line breaks between paragraphs.\nUse <br> for line breaks.\nDo not write everything in a single paragraph."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        784,
+        -464
+      ],
+      "id": "ecccf37f-67ac-4266-a23e-56a0b97e2555",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        -288
+      ],
+      "id": "6a46ef9f-9f12-43ff-9bce-2723b9cdb67d",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "nBHqd6MIcQcM0LRu",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"subject\": {\n      \"type\": \"string\"\n    },\n    \"body\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        -272
+      ],
+      "id": "4e67797b-96ba-45ac-95d1-e05a2b7a3a9b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.output.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.output.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1072,
+        -464
+      ],
+      "id": "7f8a0987-5ce6-4c03-a179-edd29567bf93",
+      "name": "Create a draft",
+      "webhookId": "48735a2b-a176-40b6-b683-d571f05e0e16",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bzi1s5DnYTEPaPmA",
+          "name": "DoHuunSuk"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5043887965",
+        "text": "=New draft is loaded. \n\nSubject:\n{{ $('AI Agent').item.json.output.subject }}\n\n\n\nOld-Message:\n{{ $('Gmail Trigger').item.json.snippet }}\n\n\n\nNew-draft:\n{{ $('AI Agent').item.json.output.body }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        -464
+      ],
+      "id": "f995e743-96ca-4614-a237-f96f1643f47c",
+      "name": "Send a text message",
+      "webhookId": "713f732c-9438-4471-9670-e34c945436ea",
+      "credentials": {
+        "telegramApi": {
+          "id": "jz6KXn5sySYSo2te",
+          "name": "edinso_bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "39a0d54a-19db-46e6-9864-85d554dc2650",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "18f26a455541906068d781c0b8669ca435535782a99db8fd03f279c4bd203691"
+  },
+  "id": "FMMoawer6TsGBkHM",
+  "tags": []
+}
